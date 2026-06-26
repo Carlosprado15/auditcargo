@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AUDITCARGO — Contato</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="companyConfig.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+      text-align: center;
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      margin-bottom: 32px;
+    }
+    .logo-icon {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+      box-shadow: 0 6px 20px rgba(37,99,235,0.35);
+    }
+    .logo-text { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; }
+    .logo-text .audit { color: #2563eb; }
+    .logo-text .cargo { color: #f59e0b; }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      letter-spacing: -0.5px;
+    }
+    .tagline {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-bottom: 36px;
+    }
+
+    .contacts {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      text-align: left;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 14px 18px;
+    }
+    .contact-icon {
+      width: 36px; height: 36px;
+      border-radius: 9px;
+      background: rgba(37,99,235,0.12);
+      color: #3b82f6;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+    .contact-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 3px;
+    }
+    .contact-value {
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    .contact-value a {
+      color: #f8fafc;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .contact-value a:hover { color: #3b82f6; }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: #475569;
+      text-decoration: none;
+      margin-top: 28px;
+      transition: color 0.2s;
+    }
+    .back-link:hover { color: #94a3b8; }
+
+    @media (max-width: 480px) {
+      .card { padding: 32px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <a href="/install.html" class="logo">
+    <div class="logo-icon"><i class="fa fa-shield-halved" style="color:#fff"></i></div>
+    <div class="logo-text"><span class="audit">AUDIT</span><span class="cargo">CARGO</span></div>
+  </a>
+
+  <h1>Fale Conosco</h1>
+  <p class="tagline">Plataforma Inteligente de Auditoria de Fretes</p>
+
+  <div class="contacts">
+    <div class="contact-item">
+      <div class="contact-icon"><i class="fa fa-envelope"></i></div>
+      <div>
+        <div class="contact-label">Contato Geral</div>
+        <div class="contact-value"><a data-company-email="contato" href="#"></a></div>
+      </div>
+    </div>
+    <div class="contact-item">
+      <div class="contact-icon"><i class="fa fa-briefcase"></i></div>
+      <div>
+        <div class="contact-label">Comercial</div>
+        <div class="contact-value"><a data-company-email="comercial" href="#"></a></div>
+      </div>
+    </div>
+    <div class="contact-item">
+      <div class="contact-icon"><i class="fa fa-headset"></i></div>
+      <div>
+        <div class="contact-label">Suporte</div>
+        <div class="contact-value"><a data-company-email="suporte" href="#"></a></div>
+      </div>
+    </div>
+  </div>
+
+  <a href="/install.html" class="back-link">
+    <i class="fa fa-arrow-left"></i> Voltar ao início
+  </a>
+</div>
+
+</body>
+</html>

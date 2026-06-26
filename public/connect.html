@@ -7,6 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <script src="config.js"></script>
+  <script src="companyConfig.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -16,9 +17,11 @@
       color: #f8fafc;
       min-height: 100vh;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       padding: 20px;
+      gap: 24px;
     }
 
     .card {
@@ -311,6 +314,16 @@
       transition: color 0.2s;
     }
     .back-link:hover { color: #94a3b8; }
+
+    .footer-institucional {
+      font-size: 0.75rem;
+      color: #475569;
+      line-height: 2;
+      text-align: center;
+    }
+    .footer-institucional strong { display: block; color: #64748b; font-weight: 700; margin-bottom: 2px; }
+    .footer-institucional a { color: #3b82f6; text-decoration: none; }
+    .footer-institucional a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -467,6 +480,13 @@
   </div>
 
 </div>
+
+<footer class="footer-institucional">
+  <strong>AUDITCARGO</strong>
+  Plataforma Inteligente de Auditoria de Fretes<br>
+  © <span data-company-year></span> AUDITCARGO. Todos os direitos reservados.<br>
+  Contato: <a data-company-email="contato" href="#"></a>
+</footer>
 
 <script>
   const BASE = window.API_BASE || '';

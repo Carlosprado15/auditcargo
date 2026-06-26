@@ -522,3 +522,25 @@ tbody tr:hover { background: rgba(255,255,255,0.03); }
 }
 .copy-btn:hover { background: var(--blue-light); }
 .copy-btn.copied { background: var(--green); }
+
+/* ── FOOTER INSTITUCIONAL ── */
+.footer-institucional {
+  text-align: center;
+  padding: 24px 20px;
+  border-top: 1px solid var(--card-border);
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 2;
+}
+.footer-institucional strong {
+  display: block;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 0.82rem;
+  margin-bottom: 2px;
+}
+.footer-institucional a {
+  color: var(--blue-light);
+  text-decoration: none;
+}
+.footer-institucional a:hover { text-decoration: underline; }

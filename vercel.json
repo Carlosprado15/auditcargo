@@ -8,6 +8,7 @@
     { "source": "/dashboard", "destination": "/dashboard.html" },
     { "source": "/install",   "destination": "/install.html" },
     { "source": "/connect",   "destination": "/connect.html" },
-    { "source": "/config",    "destination": "/config.html" }
+    { "source": "/config",    "destination": "/config.html" },
+    { "source": "/contato",   "destination": "/contato.html" }
   ]
 }
