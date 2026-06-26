@@ -1,5 +1,6 @@
 const db = require('./database');
-const { calcularFrete, determinarStatus } = require('./freteCalculator');
+const { determinarStatus } = require('./freteCalculator');
+const { calcularComReferencia } = require('./referenceEngine');
 
 async function vtexFetch(account, path, appKey, appToken) {
   const url = `https://${account}.vtexcommercestable.com.br${path}`;
@@ -119,15 +120,18 @@ async function processOrder(account, appKey, appToken, orderId, originCep) {
     comprimento = 20 + qtd * 3;
   }
 
-  const freteCorreto = calcularFrete({ cepOrigem: originCep, cepDestino, peso, comprimento, altura, largura });
+  const referencia = await calcularComReferencia({ cepOrigem: originCep, cepDestino, peso, comprimento, altura, largura });
+  const freteCorreto = referencia.freteReferencia;
   const economia = Math.max(0, freteCobrado - freteCorreto);
   const status = determinarStatus(freteCobrado, freteCorreto);
 
   await db.run(
     `INSERT OR REPLACE INTO pedidos
-      (pedidoId, cepOrigem, cepDestino, peso, comprimento, altura, largura, freteCobrado, freteCorreto, economia, status)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
-    [orderId, originCep, cepDestino, peso, comprimento, altura, largura, freteCobrado, freteCorreto, economia, status]
+      (pedidoId, cepOrigem, cepDestino, peso, comprimento, altura, largura, freteCobrado, freteCorreto, economia, status,
+       fonte_referencia, nivel_confianca, versao_motor, observacao_auditoria)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [orderId, originCep, cepDestino, peso, comprimento, altura, largura, freteCobrado, freteCorreto, economia, status,
+     referencia.fonte, referencia.nivelConfianca, referencia.versao, referencia.observacao]
   );
 
   return true;

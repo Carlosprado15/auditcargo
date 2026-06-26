@@ -3,7 +3,8 @@ const router = express.Router();
 const multer = require('multer');
 const db = require('../services/database');
 const { extractFreteData } = require('../services/documentParser');
-const { calcularFrete, determinarStatus } = require('../services/freteCalculator');
+const { determinarStatus } = require('../services/freteCalculator');
+const { calcularComReferencia } = require('../services/referenceEngine');
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -51,7 +52,8 @@ router.post('/upload', upload.single('documento'), async (req, res) => {
   const altura = Number(dados.altura || 15);
   const largura = Number(dados.largura || 15);
 
-  const freteCorreto = calcularFrete({ cepOrigem: cepO, cepDestino: cepD, peso, comprimento, altura, largura });
+  const referencia = await calcularComReferencia({ cepOrigem: cepO, cepDestino: cepD, peso, comprimento, altura, largura });
+  const freteCorreto = referencia.freteReferencia;
   const economia = Math.max(0, freteCobrado - freteCorreto);
   const status = determinarStatus(freteCobrado, freteCorreto);
   const pedidoId = `BOLETO-${Date.now()}`;
@@ -59,9 +61,11 @@ router.post('/upload', upload.single('documento'), async (req, res) => {
 
   await db.run(
     `INSERT OR REPLACE INTO pedidos
-      (pedidoId, cepOrigem, cepDestino, peso, comprimento, altura, largura, freteCobrado, freteCorreto, economia, status, observacao)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
-    [pedidoId, cepO, cepD, peso, comprimento, altura, largura, freteCobrado, freteCorreto, economia, status, observacao]
+      (pedidoId, cepOrigem, cepDestino, peso, comprimento, altura, largura, freteCobrado, freteCorreto, economia, status, observacao,
+       fonte_referencia, nivel_confianca, versao_motor, observacao_auditoria)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [pedidoId, cepO, cepD, peso, comprimento, altura, largura, freteCobrado, freteCorreto, economia, status, observacao,
+     referencia.fonte, referencia.nivelConfianca, referencia.versao, referencia.observacao]
   );
 
   res.json({

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../services/database');
 const { calcularFrete, determinarStatus } = require('../services/freteCalculator');
+const { calcularComReferencia } = require('../services/referenceEngine');
 const { gerarRelatorioPDF } = require('../services/relatorioGenerator');
 
 // POST /webhook
@@ -13,24 +14,27 @@ router.post('/webhook', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Campos obrigatórios: pedidoId, cepOrigem, cepDestino, peso, freteCobrado' });
     }
 
-    const freteCorreto = calcularFrete({
+    const referencia = await calcularComReferencia({
       cepOrigem, cepDestino,
       peso: Number(peso),
       comprimento: Number(comprimento || 20),
       altura: Number(altura || 15),
       largura: Number(largura || 15)
     });
+    const freteCorreto = referencia.freteReferencia;
 
     const economia = Math.max(0, Number(freteCobrado) - freteCorreto);
     const status = determinarStatus(Number(freteCobrado), freteCorreto);
 
     await db.run(
       `INSERT OR REPLACE INTO pedidos
-        (pedidoId, cepOrigem, cepDestino, peso, comprimento, altura, largura, freteCobrado, freteCorreto, economia, status)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+        (pedidoId, cepOrigem, cepDestino, peso, comprimento, altura, largura, freteCobrado, freteCorreto, economia, status,
+         fonte_referencia, nivel_confianca, versao_motor, observacao_auditoria)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [String(pedidoId), String(cepOrigem), String(cepDestino),
        Number(peso), Number(comprimento || 20), Number(altura || 15), Number(largura || 15),
-       Number(freteCobrado), freteCorreto, economia, status]
+       Number(freteCobrado), freteCorreto, economia, status,
+       referencia.fonte, referencia.nivelConfianca, referencia.versao, referencia.observacao]
     );
 
     return res.json({
@@ -140,13 +144,22 @@ router.patch('/pedidos/:id/enviado', async (req, res) => {
 
 async function buildDadosRelatorio() {
   const resumo = await db.get(`SELECT SUM(freteCobrado) AS totalGasto, SUM(freteCorreto) AS totalReal, SUM(economia) AS economia, COUNT(*) AS totalPedidos FROM pedidos`);
-  const pedidos = await db.all(`SELECT pedidoId, freteCobrado, freteCorreto, economia, status, dataHora FROM pedidos ORDER BY dataHora DESC`);
+  const pedidos = await db.all(`SELECT id, pedidoId, cepOrigem, cepDestino, peso, comprimento, altura, largura, freteCobrado, freteCorreto, economia, status, dataHora, fonte_referencia, nivel_confianca, versao_motor, observacao_auditoria FROM pedidos ORDER BY dataHora DESC`);
   const cfgRows = await db.all('SELECT chave, valor FROM config');
   const config = {};
   cfgRows.forEach(c => { config[c.chave] = c.valor; });
 
   const totalGasto = resumo.totalGasto || 0;
   const economia = resumo.economia || 0;
+
+  // Agrega estatísticas do motor para o relatório
+  const fonteContagem = {};
+  let versaoMotor = '1.0';
+  pedidos.forEach(p => {
+    const f = p.fonte_referencia || 'fallback';
+    fonteContagem[f] = (fonteContagem[f] || 0) + 1;
+    if (p.versao_motor) versaoMotor = p.versao_motor;
+  });
 
   return {
     totalGasto,
@@ -157,7 +170,8 @@ async function buildDadosRelatorio() {
     pedidos,
     clienteNome: config.cliente_nome || 'Cliente',
     clienteEmail: config.cliente_email || '',
-    empresaNome: config.empresa_nome || 'Empresa'
+    empresaNome: config.empresa_nome || 'Empresa',
+    motorInfo: { versao: versaoMotor, fonteContagem }
   };
 }
 

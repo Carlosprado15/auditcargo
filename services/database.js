@@ -43,11 +43,68 @@ async function initDB() {
       dataHora DATETIME DEFAULT (datetime('now')),
       status TEXT DEFAULT 'pendente',
       enviado INTEGER DEFAULT 0,
-      observacao TEXT
+      observacao TEXT,
+      fonte_referencia TEXT,
+      nivel_confianca TEXT,
+      versao_motor TEXT,
+      observacao_auditoria TEXT
     )`,
     `CREATE TABLE IF NOT EXISTS config (
       chave TEXT PRIMARY KEY,
       valor TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS melhor_envio_cache (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      chave_cache TEXT NOT NULL,
+      cep_origem TEXT,
+      cep_destino TEXT,
+      peso REAL,
+      comprimento REAL,
+      altura REAL,
+      largura REAL,
+      preco REAL,
+      status_http INTEGER,
+      tempo_resposta_ms INTEGER,
+      data_consulta_api TEXT,
+      criado_em DATETIME DEFAULT (datetime('now'))
+    )`,
+    `CREATE TABLE IF NOT EXISTS tabelas_frete (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nome TEXT NOT NULL,
+      transportadora TEXT NOT NULL,
+      data_inicio TEXT NOT NULL,
+      data_fim TEXT,
+      status TEXT NOT NULL DEFAULT 'ativa',
+      observacoes TEXT,
+      criado_em DATETIME DEFAULT (datetime('now')),
+      atualizado_em DATETIME DEFAULT (datetime('now'))
+    )`,
+    `CREATE TABLE IF NOT EXISTS faixas_tarifarias (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tabela_id INTEGER NOT NULL REFERENCES tabelas_frete(id),
+      cep_inicial TEXT NOT NULL,
+      cep_final TEXT NOT NULL,
+      peso_inicial REAL NOT NULL,
+      peso_final REAL NOT NULL,
+      valor_frete REAL NOT NULL,
+      cubagem REAL,
+      gris REAL,
+      pedagio REAL,
+      ad_valorem REAL,
+      icms REAL,
+      taxas_adicionais TEXT,
+      criado_em DATETIME DEFAULT (datetime('now'))
+    )`,
+    `CREATE TABLE IF NOT EXISTS logs_importacao (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tabela_id INTEGER REFERENCES tabelas_frete(id),
+      arquivo_origem TEXT,
+      total_registros INTEGER,
+      importados INTEGER,
+      ignorados INTEGER,
+      erros INTEGER,
+      usuario TEXT,
+      importado_em DATETIME DEFAULT (datetime('now'))
     )`,
     `INSERT OR IGNORE INTO config (chave, valor) VALUES ('cliente_nome','Seu Cliente')`,
     `INSERT OR IGNORE INTO config (chave, valor) VALUES ('cliente_email','cliente@email.com')`,
@@ -56,6 +113,19 @@ async function initDB() {
 
   for (const sql of setupStatements) {
     await _client.execute(sql);
+  }
+
+  // Migrations: adicionar novas colunas em bancos existentes sem remover nenhuma coluna
+  const migrations = [
+    `ALTER TABLE pedidos ADD COLUMN fonte_referencia TEXT`,
+    `ALTER TABLE pedidos ADD COLUMN nivel_confianca TEXT`,
+    `ALTER TABLE pedidos ADD COLUMN versao_motor TEXT`,
+    `ALTER TABLE pedidos ADD COLUMN observacao_auditoria TEXT`,
+    `ALTER TABLE tabelas_frete ADD COLUMN arquivo_origem TEXT`,
+    `ALTER TABLE tabelas_frete ADD COLUMN usuario TEXT`,
+  ];
+  for (const migration of migrations) {
+    try { await _client.execute(migration); } catch {}
   }
 
   return _client;
