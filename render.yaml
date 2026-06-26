@@ -10,4 +10,4 @@ services:
       - key: NODE_ENV
         value: production
       - key: FRONTEND_URL
-        value: https://auditcargo.vercel.app  # ← atualizar com sua URL Vercel
+        value: https://auditcargo.vercel.app
