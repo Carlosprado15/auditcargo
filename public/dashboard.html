@@ -75,7 +75,10 @@
       <button class="btn btn-gold" onclick="baixarRelatorio()">
         <i class="fa fa-file-pdf"></i> Relatório de Glosa
       </button>
-      <button class="btn btn-primary" onclick="seedDados()">
+      <button class="btn btn-primary" onclick="abrirModalUpload()">
+        <i class="fa fa-file-arrow-up"></i> Auditar Novo Frete
+      </button>
+      <button class="btn btn-outline" onclick="seedDados()">
         <i class="fa fa-database"></i> Dados de Exemplo
       </button>
     </div>
@@ -149,6 +152,55 @@
   </div>
 
 </main>
+
+<!-- MODAL UPLOAD BOLETO -->
+<div class="modal-overlay" id="modalUpload">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa fa-file-arrow-up" style="color:var(--blue);margin-right:8px"></i>Auditar Novo Frete</div>
+      <button class="modal-close" onclick="fecharModalUpload()"><i class="fa fa-xmark"></i></button>
+    </div>
+
+    <!-- Passo 1: Seleção do arquivo -->
+    <div id="uploadStep1">
+      <div id="uploadDropZone"
+           onclick="document.getElementById('uploadInput').click()"
+           ondragover="event.preventDefault();this.style.borderColor='var(--blue)'"
+           ondragleave="this.style.borderColor='rgba(37,99,235,0.3)'"
+           ondrop="handleFileDrop(event)"
+           style="border:2px dashed rgba(37,99,235,0.3);border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;transition:border-color 0.2s;margin-bottom:12px">
+        <i class="fa fa-cloud-arrow-up" style="font-size:2.5rem;color:var(--blue);display:block;margin-bottom:12px"></i>
+        <div style="font-weight:600;margin-bottom:4px">Clique ou arraste o documento aqui</div>
+        <div style="font-size:0.82rem;color:var(--muted)">PDF, JPG, PNG ou WEBP — máximo 5MB</div>
+        <input type="file" id="uploadInput" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display:none" onchange="processarUpload(this.files[0])">
+      </div>
+      <div style="font-size:0.78rem;color:var(--muted);text-align:center">
+        <i class="fa fa-robot" style="color:var(--blue-light)"></i>
+        IA extrai automaticamente: transportadora, valor, CEPs, peso e dimensões
+      </div>
+    </div>
+
+    <!-- Passo 2: Processando -->
+    <div id="uploadStep2" style="display:none;text-align:center;padding:32px 0">
+      <i class="fa fa-circle-notch" style="font-size:2.5rem;color:var(--blue);display:block;margin-bottom:16px;animation:spin 1s linear infinite"></i>
+      <div style="font-weight:600;margin-bottom:6px">Processando com IA...</div>
+      <div style="font-size:0.82rem;color:var(--muted)">Extração OCR → Claude → Auditoria automática</div>
+    </div>
+
+    <!-- Passo 3: Resultado -->
+    <div id="uploadStep3" style="display:none">
+      <div id="uploadResultContent"></div>
+      <div class="modal-actions" style="margin-top:16px">
+        <button class="btn btn-primary" onclick="fecharModalUpload()">
+          <i class="fa fa-check"></i> Concluir
+        </button>
+        <button class="btn btn-outline" onclick="resetarUpload()">
+          <i class="fa fa-plus"></i> Auditar outro
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL COBRAR -->
 <div class="modal-overlay" id="modalCobrar">

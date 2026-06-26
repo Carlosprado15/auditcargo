@@ -348,6 +348,109 @@ async function vtexDisconnect() {
   carregarVtexStatus();
 }
 
+// ── UPLOAD BOLETO ─────────────────────────────────────
+function abrirModalUpload() {
+  resetarUpload();
+  document.getElementById('modalUpload').classList.add('open');
+}
+
+function fecharModalUpload() {
+  document.getElementById('modalUpload').classList.remove('open');
+  resetarUpload();
+}
+
+function resetarUpload() {
+  document.getElementById('uploadStep1').style.display = '';
+  document.getElementById('uploadStep2').style.display = 'none';
+  document.getElementById('uploadStep3').style.display = 'none';
+  document.getElementById('uploadInput').value = '';
+}
+
+function handleFileDrop(event) {
+  event.preventDefault();
+  document.getElementById('uploadDropZone').style.borderColor = 'rgba(37,99,235,0.3)';
+  const file = event.dataTransfer.files[0];
+  if (file) processarUpload(file);
+}
+
+async function processarUpload(file) {
+  if (!file) return;
+
+  document.getElementById('uploadStep1').style.display = 'none';
+  document.getElementById('uploadStep2').style.display = '';
+  document.getElementById('uploadStep3').style.display = 'none';
+
+  const formData = new FormData();
+  formData.append('documento', file);
+
+  try {
+    const r = await fetch(BASE + '/api/upload', { method: 'POST', body: formData });
+    const d = await r.json();
+
+    document.getElementById('uploadStep2').style.display = 'none';
+    document.getElementById('uploadStep3').style.display = '';
+
+    if (d.success) {
+      const statusMap = {
+        correto: { icon: '🟢', label: 'Correto', color: 'var(--green-light)' },
+        cobrado_a_mais: { icon: '🔴', label: 'Cobrado a mais', color: '#f87171' },
+        economia_identificada: { icon: '⚡', label: 'Economia identificada', color: 'var(--gold)' },
+      };
+      const s = statusMap[d.status] || { icon: '⏳', label: d.status, color: 'var(--muted)' };
+      const ext = d.dadosExtraidos || {};
+
+      document.getElementById('uploadResultContent').innerHTML = `
+        <div style="background:rgba(22,163,74,0.08);border:1px solid rgba(22,163,74,0.2);border-radius:10px;padding:16px;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <i class="fa fa-circle-check" style="color:var(--green-light)"></i>
+            <span style="font-weight:700">Auditoria concluída!</span>
+            <span style="margin-left:auto;color:${s.color};font-weight:600">${s.icon} ${s.label}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.85rem">
+            <div><span style="color:var(--muted)">Frete cobrado:</span><br><strong>${fmtMoeda(d.freteCobrado)}</strong></div>
+            <div><span style="color:var(--muted)">Frete correto:</span><br><strong style="color:var(--green-light)">${fmtMoeda(d.freteCorreto)}</strong></div>
+            <div style="grid-column:1/-1"><span style="color:var(--muted)">Economia identificada:</span><br><strong style="color:var(--gold);font-size:1.05rem">${fmtMoeda(d.economia)}</strong></div>
+          </div>
+        </div>
+        <div style="font-size:0.8rem;color:var(--muted);background:var(--card);border-radius:8px;padding:10px 14px">
+          <div style="font-weight:600;margin-bottom:6px;color:var(--text)">Dados extraídos pela IA</div>
+          ${ext.transportadora ? `<div>Transportadora: <strong>${ext.transportadora}</strong></div>` : ''}
+          <div>CEP origem → destino: <strong>${ext.cepOrigem || '—'} → ${ext.cepDestino || '—'}</strong></div>
+          <div>Peso: <strong>${ext.peso ? ext.peso + ' kg' : '—'}</strong>${ext.comprimento ? ` · Dimensões: ${ext.comprimento}×${ext.altura}×${ext.largura} cm` : ''}</div>
+        </div>
+      `;
+      await recalcular();
+    } else {
+      document.getElementById('uploadResultContent').innerHTML = `
+        <div style="background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);border-radius:10px;padding:16px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <i class="fa fa-circle-xmark" style="color:#f87171"></i>
+            <span style="font-weight:700">Erro na extração</span>
+          </div>
+          <div style="font-size:0.85rem;color:var(--muted)">${d.error || 'Não foi possível processar o documento.'}</div>
+          ${d.dadosExtraidos ? `<div style="margin-top:8px;font-size:0.78rem;color:var(--muted)">Dados parcialmente extraídos: ${JSON.stringify(d.dadosExtraidos)}</div>` : ''}
+        </div>
+      `;
+    }
+  } catch (e) {
+    document.getElementById('uploadStep2').style.display = 'none';
+    document.getElementById('uploadStep3').style.display = '';
+    document.getElementById('uploadResultContent').innerHTML = `
+      <div style="background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);border-radius:10px;padding:16px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <i class="fa fa-circle-xmark" style="color:#f87171"></i>
+          <span style="font-weight:700">Erro de conexão</span>
+        </div>
+        <div style="font-size:0.85rem;color:var(--muted)">Não foi possível conectar ao servidor. Tente novamente.</div>
+      </div>
+    `;
+  }
+}
+
+document.getElementById('modalUpload')?.addEventListener('click', (e) => {
+  if (e.target === document.getElementById('modalUpload')) fecharModalUpload();
+});
+
 // ── INIT ──────────────────────────────────────────────
 async function init() {
   const overlay = document.getElementById('loadingOverlay');

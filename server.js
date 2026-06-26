@@ -31,8 +31,10 @@ async function main() {
 
   const apiRouter = require('./routes/api');
   const vtexRouter = require('./routes/vtex');
+  const uploadRouter = require('./routes/upload');
   app.use('/api', apiRouter);
   app.use('/api/vtex', vtexRouter);
+  app.use('/api', uploadRouter);
   app.use('/', apiRouter);
 
   app.get('/install', (req, res) => res.redirect('/install.html'));
