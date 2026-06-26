@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: auditcargo-api
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        value: https://auditcargo.vercel.app  # ← atualizar com sua URL Vercel

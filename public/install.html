@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AUDITCARGO — Instalar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="config.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -200px; left: 50%;
+      transform: translateX(-50%);
+      width: 800px; height: 800px;
+      background: radial-gradient(circle, rgba(37,99,235,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -150px; right: -100px;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(245,158,11,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      max-width: 680px;
+      width: 100%;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── LOGO ── */
+    .logo-wrap { margin-bottom: 48px; }
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .logo-icon {
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+      box-shadow: 0 8px 24px rgba(37,99,235,0.35);
+    }
+    .logo-text { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px; }
+    .logo-text .audit { color: #2563eb; }
+    .logo-text .cargo { color: #f59e0b; }
+
+    /* ── BADGE ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(37,99,235,0.12);
+      border: 1px solid rgba(37,99,235,0.25);
+      color: #93c5fd;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 28px;
+    }
+    .badge-dot { width: 6px; height: 6px; background: #3b82f6; border-radius: 50%; animation: pulse 1.5s ease infinite; }
+
+    /* ── HEADLINE ── */
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+      margin-bottom: 20px;
+    }
+    h1 .highlight {
+      background: linear-gradient(135deg, #2563eb, #f59e0b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      color: #94a3b8;
+      line-height: 1.6;
+      max-width: 480px;
+      margin: 0 auto 40px;
+    }
+
+    /* ── CTA BUTTON ── */
+    .cta-wrap { margin-bottom: 48px; }
+    .btn-install {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 700;
+      padding: 18px 40px;
+      border-radius: 14px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 8px 32px rgba(37,99,235,0.4);
+      transition: all 0.2s ease;
+      letter-spacing: -0.3px;
+    }
+    .btn-install:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(37,99,235,0.5);
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+    }
+    .btn-install i { font-size: 1rem; }
+
+    .cta-sub {
+      margin-top: 14px;
+      font-size: 0.82rem;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+    .cta-sub span { display: flex; align-items: center; gap: 5px; }
+    .cta-sub i { color: #22c55e; font-size: 0.7rem; }
+
+    /* ── FEATURES ── */
+    .features {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 52px;
+    }
+    .feature {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 0.84rem;
+      color: #94a3b8;
+    }
+    .feature i { color: #f59e0b; font-size: 0.85rem; }
+
+    /* ── STATS ── */
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      flex-wrap: wrap;
+    }
+    .stat { text-align: center; }
+    .stat-value { font-size: 1.6rem; font-weight: 800; color: #f8fafc; }
+    .stat-label { font-size: 0.78rem; color: #64748b; margin-top: 2px; }
+
+    /* ── DIVIDER ── */
+    .stats-divider {
+      width: 1px; height: 40px;
+      background: rgba(255,255,255,0.08);
+    }
+
+    /* ── PLATFORMS ── */
+    .platforms {
+      text-align: center;
+      padding: 28px 20px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .platforms p { font-size: 0.78rem; color: #475569; margin-bottom: 14px; letter-spacing: 0.5px; text-transform: uppercase; }
+    .platform-logos { display: flex; align-items: center; justify-content: center; gap: 28px; flex-wrap: wrap; }
+    .platform-logo {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #334155;
+      padding: 6px 14px;
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .platform-logo.active { color: #f00 !important; border-color: rgba(255,0,0,0.2); background: rgba(255,0,0,0.04); }
+    .platform-logo:hover { color: #94a3b8; border-color: rgba(255,255,255,0.1); }
+
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+    @media(max-width:520px) {
+      .stats-divider { display: none; }
+      .features { flex-direction: column; align-items: center; }
+    }
+  </style>
+</head>
+<body>
+
+<main class="hero">
+  <div class="hero-inner">
+
+    <div class="logo-wrap">
+      <a href="#" class="logo">
+        <div class="logo-icon"><i class="fa fa-shield-halved"></i></div>
+        <div class="logo-text"><span class="audit">AUDIT</span><span class="cargo">CARGO</span></div>
+      </a>
+    </div>
+
+    <div class="badge">
+      <div class="badge-dot"></div>
+      Integração VTEX disponível
+    </div>
+
+    <h1>Pare de <span class="highlight">pagar a mais</span><br>no frete do seu e-commerce</h1>
+
+    <p class="subtitle">
+      O AUDITCARGO conecta na sua loja VTEX em segundos, audita 100% dos seus fretes e identifica cobranças indevidas automaticamente.
+    </p>
+
+    <div class="cta-wrap">
+      <a href="connect.html" class="btn-install">
+        <i class="fa fa-bolt"></i>
+        Instalar AUDITCARGO
+      </a>
+      <div class="cta-sub">
+        <span><i class="fa fa-circle-check"></i> Gratuito para testar</span>
+        <span><i class="fa fa-circle-check"></i> Sem cartão de crédito</span>
+        <span><i class="fa fa-circle-check"></i> Instala em 60 segundos</span>
+      </div>
+    </div>
+
+    <div class="features">
+      <div class="feature"><i class="fa fa-magnifying-glass-chart"></i> Auditoria automática</div>
+      <div class="feature"><i class="fa fa-file-pdf"></i> Relatório de glosa em PDF</div>
+      <div class="feature"><i class="fa fa-envelope"></i> E-mail de cobrança pronto</div>
+      <div class="feature"><i class="fa fa-chart-bar"></i> Dashboard em tempo real</div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value">38%</div>
+        <div class="stat-label">Economia média identificada</div>
+      </div>
+      <div class="stats-divider"></div>
+      <div class="stat">
+        <div class="stat-value">100%</div>
+        <div class="stat-label">Pedidos auditados</div>
+      </div>
+      <div class="stats-divider"></div>
+      <div class="stat">
+        <div class="stat-value">60s</div>
+        <div class="stat-label">Para instalar</div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer class="platforms">
+  <p>Compatível com</p>
+  <div class="platform-logos">
+    <span class="platform-logo active">VTEX</span>
+    <span class="platform-logo">Bling</span>
+    <span class="platform-logo">Tiny</span>
+    <span class="platform-logo">Magento</span>
+    <span class="platform-logo">WooCommerce</span>
+  </div>
+</footer>
+
+<script>
+  const BASE = window.API_BASE || '';
+  fetch(BASE + '/api/vtex/status').then(r => r.json()).then(d => {
+    if (d.connected) window.location.href = '/dashboard.html';
+  }).catch(() => {});
+</script>
+
+</body>
+</html>

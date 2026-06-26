@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AUDITCARGO — Conectar VTEX</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="config.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 40px;
+      width: 100%;
+      max-width: 460px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+    }
+
+    /* ── HEADER ── */
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+    .brand { display: flex; align-items: center; gap: 8px; }
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    .brand-name { font-weight: 800; font-size: 1.05rem; }
+    .brand-name .a { color: #2563eb; }
+    .brand-name .c { color: #f59e0b; }
+
+    .conn-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #64748b;
+      letter-spacing: 0.5px;
+    }
+
+    .vtex-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,0,0,0.08);
+      border: 1px solid rgba(255,0,0,0.2);
+      border-radius: 8px;
+      padding: 6px 12px;
+    }
+    .vtex-logo { font-size: 1rem; font-weight: 900; color: #ff3333; letter-spacing: -1px; }
+
+    /* ── STEP INDICATOR ── */
+    .steps-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 32px;
+    }
+    .step-dot {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700;
+      color: #64748b;
+      transition: all 0.3s;
+      flex-shrink: 0;
+    }
+    .step-dot.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+    .step-dot.done { background: #16a34a; border-color: #16a34a; color: #fff; }
+    .step-line { flex: 1; height: 2px; background: rgba(255,255,255,0.06); transition: background 0.3s; }
+    .step-line.done { background: #16a34a; }
+
+    /* ── STEP CONTENT ── */
+    .step-content { display: none; }
+    .step-content.active { display: block; }
+
+    .step-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+      letter-spacing: -0.5px;
+    }
+    .step-desc { font-size: 0.875rem; color: #94a3b8; margin-bottom: 28px; line-height: 1.5; }
+
+    /* ── STORE INPUT STEP ── */
+    .store-input-wrap {
+      display: flex;
+      background: #0f172a;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+      margin-bottom: 10px;
+    }
+    .store-input-wrap:focus-within { border-color: #2563eb; }
+    .store-input-wrap input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 14px 16px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f8fafc;
+      font-family: inherit;
+    }
+    .store-input-wrap input::placeholder { font-weight: 400; color: #475569; }
+    .store-suffix {
+      display: flex; align-items: center;
+      padding: 0 14px;
+      font-size: 0.78rem;
+      color: #475569;
+      white-space: nowrap;
+      border-left: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .field-hint {
+      font-size: 0.78rem;
+      color: #475569;
+      margin-bottom: 24px;
+    }
+    .field-hint a { color: #3b82f6; }
+
+    /* ── FIELDS ── */
+    .field { margin-bottom: 18px; }
+    .field label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-bottom: 7px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .field-inner {
+      position: relative;
+    }
+    .field-inner input {
+      width: 100%;
+      background: #0f172a;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: #f8fafc;
+      font-size: 0.9rem;
+      font-family: inherit;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+    .field-inner input:focus { border-color: #2563eb; }
+    .field-inner input.error-field { border-color: #dc2626; }
+    .eye-btn {
+      position: absolute; right: 12px; top: 50%;
+      transform: translateY(-50%);
+      background: none; border: none;
+      color: #475569; cursor: pointer; font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+    .eye-btn:hover { color: #94a3b8; }
+
+    .helper-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      color: #475569;
+      margin-top: 8px;
+    }
+    .helper-link a { color: #3b82f6; text-decoration: none; }
+    .helper-link a:hover { text-decoration: underline; }
+
+    /* ── SECURITY INFO ── */
+    .security-info {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: rgba(22,163,74,0.07);
+      border: 1px solid rgba(22,163,74,0.15);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 0.8rem;
+      color: #86efac;
+      margin-bottom: 24px;
+    }
+    .security-info i { color: #22c55e; margin-top: 1px; flex-shrink: 0; }
+
+    /* ── PERMISSIONS ── */
+    .permissions {
+      background: rgba(37,99,235,0.06);
+      border: 1px solid rgba(37,99,235,0.15);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .permissions-title { font-size: 0.78rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 12px; }
+    .perm-item { display: flex; align-items: center; gap: 10px; font-size: 0.84rem; color: #94a3b8; margin-bottom: 8px; }
+    .perm-item:last-child { margin-bottom: 0; }
+    .perm-item i { color: #3b82f6; font-size: 0.8rem; width: 14px; }
+
+    /* ── BUTTON ── */
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-family: inherit;
+    }
+    .btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; box-shadow: 0 4px 16px rgba(37,99,235,0.3); }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(37,99,235,0.4); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* ── ERROR ── */
+    .error-box {
+      display: none;
+      background: rgba(220,38,38,0.08);
+      border: 1px solid rgba(220,38,38,0.25);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 0.84rem;
+      color: #fca5a5;
+      margin-bottom: 16px;
+    }
+    .error-box.show { display: flex; gap: 8px; align-items: flex-start; }
+
+    /* ── SYNCING STEP ── */
+    .sync-steps { margin: 20px 0; }
+    .sync-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 0.9rem;
+      opacity: 0.4;
+      transition: opacity 0.4s;
+    }
+    .sync-item:last-child { border-bottom: none; }
+    .sync-item.done { opacity: 1; }
+    .sync-item.active { opacity: 1; }
+    .sync-icon { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .spin { animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── SUCCESS STEP ── */
+    .success-badge {
+      width: 72px; height: 72px;
+      background: rgba(22,163,74,0.12);
+      border: 2px solid rgba(22,163,74,0.3);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; color: #22c55e;
+      margin: 0 auto 20px;
+      animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    .success-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .s-stat {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+    .s-stat-value { font-size: 1.4rem; font-weight: 800; color: #f59e0b; }
+    .s-stat-label { font-size: 0.75rem; color: #64748b; margin-top: 3px; }
+
+    .btn-success { background: linear-gradient(135deg, #16a34a, #15803d); color: #fff; }
+    .btn-success:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(22,163,74,0.3); }
+
+    /* ── BACK LINK ── */
+    .back-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: #475569;
+      text-decoration: none;
+      margin-top: 20px;
+      justify-content: center;
+      transition: color 0.2s;
+    }
+    .back-link:hover { color: #94a3b8; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- HEADER -->
+  <div class="card-header">
+    <div class="brand">
+      <div class="brand-icon"><i class="fa fa-shield-halved" style="color:#fff"></i></div>
+      <div class="brand-name"><span class="a">AUDIT</span><span class="c">CARGO</span></div>
+    </div>
+    <div>
+      <div class="conn-label" style="text-align:right;margin-bottom:4px">Conectando com</div>
+      <div class="vtex-badge">
+        <div class="vtex-logo">vtex</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP INDICATOR -->
+  <div class="steps-indicator">
+    <div class="step-dot active" id="dot1">1</div>
+    <div class="step-line" id="line1"></div>
+    <div class="step-dot" id="dot2">2</div>
+    <div class="step-line" id="line2"></div>
+    <div class="step-dot" id="dot3">3</div>
+  </div>
+
+  <!-- STEP 1: NOME DA LOJA -->
+  <div class="step-content active" id="step1">
+    <div class="step-title">Qual é a sua loja?</div>
+    <div class="step-desc">Digite o nome da sua loja VTEX. É o que aparece no endereço da sua loja.</div>
+
+    <div class="store-input-wrap">
+      <input type="text" id="accountInput" placeholder="minhaloja" autocomplete="off" spellcheck="false">
+      <div class="store-suffix">.vtexcommercestable.com.br</div>
+    </div>
+    <div class="field-hint" id="storeHint" style="display:none"></div>
+
+    <div class="error-box" id="err1"><i class="fa fa-circle-exclamation"></i> <span></span></div>
+
+    <button class="btn btn-primary" id="btn1" onclick="validateStore()" style="margin-top:20px">
+      <span>Continuar</span>
+      <i class="fa fa-arrow-right"></i>
+    </button>
+
+    <a href="install.html" class="back-link"><i class="fa fa-arrow-left"></i> Voltar</a>
+  </div>
+
+  <!-- STEP 2: CREDENCIAIS -->
+  <div class="step-content" id="step2">
+    <div class="step-title">Autorizar acesso</div>
+    <div class="step-desc">O AUDITCARGO precisa de acesso de <strong>leitura</strong> aos seus pedidos para auditar os fretes.</div>
+
+    <div class="permissions">
+      <div class="permissions-title">O AUDITCARGO vai poder:</div>
+      <div class="perm-item"><i class="fa fa-eye"></i> Ler seus pedidos e fretes</div>
+      <div class="perm-item"><i class="fa fa-chart-bar"></i> Calcular economia no frete</div>
+      <div class="perm-item"><i class="fa fa-file-pdf"></i> Gerar relatórios de glosa</div>
+      <div class="perm-item"><i class="fa fa-ban" style="color:#dc2626"></i> <span style="color:#94a3b8">Nunca modifica pedidos ou produtos</span></div>
+    </div>
+
+    <div class="field">
+      <label>Chave de acesso (App Key)</label>
+      <div class="field-inner">
+        <input type="text" id="appKey" placeholder="vtexappkey..." autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Token de acesso (App Token)</label>
+      <div class="field-inner">
+        <input type="password" id="appToken" placeholder="••••••••••••••••••••••" autocomplete="off" id="appToken">
+        <button class="eye-btn" onclick="toggleToken(this)" type="button"><i class="fa fa-eye"></i></button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>CEP do seu depósito / galpão</label>
+      <div class="field-inner">
+        <input type="text" id="originCep" placeholder="00000-000" maxlength="9">
+      </div>
+    </div>
+
+    <div class="helper-link">
+      <i class="fa fa-circle-question"></i>
+      <span>Não sabe como gerar? <a href="https://help.vtex.com/pt/tutorial/criar-appkey-e-apptoken-para-autenticar-integracoes" target="_blank">Veja o tutorial VTEX →</a></span>
+    </div>
+
+    <div class="security-info" style="margin-top:16px">
+      <i class="fa fa-lock"></i>
+      <span>Suas credenciais ficam armazenadas apenas no seu computador. Nunca são enviadas para servidores externos.</span>
+    </div>
+
+    <div class="error-box" id="err2"><i class="fa fa-circle-exclamation"></i> <span></span></div>
+
+    <button class="btn btn-primary" id="btn2" onclick="connect()">
+      <i class="fa fa-bolt"></i>
+      <span>Autorizar e Conectar</span>
+    </button>
+
+    <a href="#" class="back-link" onclick="goStep(1);return false"><i class="fa fa-arrow-left"></i> Trocar loja</a>
+  </div>
+
+  <!-- STEP 3: SYNCING -->
+  <div class="step-content" id="step3">
+    <div class="step-title">Configurando AUDITCARGO</div>
+    <div class="step-desc">Aguarde enquanto conectamos tudo automaticamente...</div>
+
+    <div class="sync-steps">
+      <div class="sync-item" id="sync1">
+        <div class="sync-icon"><i class="fa fa-circle-notch spin"></i></div>
+        <span>Verificando loja VTEX...</span>
+      </div>
+      <div class="sync-item" id="sync2">
+        <div class="sync-icon"><i class="fa fa-circle text-muted" style="color:#334155"></i></div>
+        <span>Validando credenciais...</span>
+      </div>
+      <div class="sync-item" id="sync3">
+        <div class="sync-icon"><i class="fa fa-circle" style="color:#334155"></i></div>
+        <span>Importando pedidos...</span>
+      </div>
+      <div class="sync-item" id="sync4">
+        <div class="sync-icon"><i class="fa fa-circle" style="color:#334155"></i></div>
+        <span>Auditando fretes...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: SUCCESS -->
+  <div class="step-content" id="step4">
+    <div style="text-align:center">
+      <div class="success-badge"><i class="fa fa-circle-check"></i></div>
+      <div class="step-title" style="margin-bottom:8px">AUDITCARGO conectado!</div>
+      <div class="step-desc" style="margin-bottom:24px">Sua loja <strong id="storeName" style="color:#f8fafc"></strong> está sendo monitorada.</div>
+    </div>
+
+    <div class="success-stats" id="successStats">
+      <div class="s-stat">
+        <div class="s-stat-value" id="statOrders">...</div>
+        <div class="s-stat-label">Pedidos na sua loja</div>
+      </div>
+      <div class="s-stat">
+        <div class="s-stat-value" style="color:#22c55e">✓</div>
+        <div class="s-stat-label">Auditoria ativa</div>
+      </div>
+    </div>
+
+    <button class="btn btn-success" onclick="window.location.href='/dashboard.html'">
+      <i class="fa fa-chart-bar"></i>
+      Ver Dashboard
+    </button>
+  </div>
+
+</div>
+
+<script>
+  const BASE = window.API_BASE || '';
+  let currentAccount = '';
+
+  // Formatação do CEP
+  document.getElementById('originCep').addEventListener('input', function() {
+    let v = this.value.replace(/\D/g, '').substring(0, 8);
+    if (v.length > 5) v = v.slice(0, 5) + '-' + v.slice(5);
+    this.value = v;
+  });
+
+  // Enter no campo de loja
+  document.getElementById('accountInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') validateStore();
+  });
+
+  function showError(id, msg) {
+    const box = document.getElementById(id);
+    box.querySelector('span').textContent = msg;
+    box.classList.add('show');
+  }
+  function hideError(id) {
+    document.getElementById(id).classList.remove('show');
+  }
+
+  function setBtn(id, loading, text) {
+    const btn = document.getElementById(id);
+    btn.disabled = loading;
+    btn.innerHTML = loading
+      ? `<i class="fa fa-circle-notch spin"></i> ${text}`
+      : btn.innerHTML;
+    if (!loading) btn.innerHTML = text;
+  }
+
+  function goStep(n) {
+    document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+    document.getElementById('step' + n).classList.add('active');
+    // update dots
+    for (let i = 1; i <= 3; i++) {
+      const dot = document.getElementById('dot' + i);
+      dot.classList.remove('active', 'done');
+      if (i < n) dot.classList.add('done');
+      else if (i === n) dot.classList.add('active');
+    }
+    for (let i = 1; i <= 2; i++) {
+      const line = document.getElementById('line' + i);
+      line.classList.toggle('done', i < n);
+    }
+  }
+
+  async function validateStore() {
+    const account = document.getElementById('accountInput').value.trim().toLowerCase();
+    if (!account) { showError('err1', 'Digite o nome da sua loja'); return; }
+    hideError('err1');
+
+    const btn = document.getElementById('btn1');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa fa-circle-notch spin"></i> Verificando...';
+
+    try {
+      const resp = await fetch(BASE + '/api/vtex/validate-store', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account })
+      });
+      const data = await resp.json();
+
+      if (data.valid) {
+        currentAccount = account;
+        goStep(2);
+      } else {
+        showError('err1', data.error || 'Loja não encontrada. Verifique o nome.');
+      }
+    } catch (e) {
+      showError('err1', 'Erro de conexão. Verifique sua internet.');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<span>Continuar</span> <i class="fa fa-arrow-right"></i>';
+    }
+  }
+
+  async function connect() {
+    const appKey = document.getElementById('appKey').value.trim();
+    const appToken = document.getElementById('appToken').value.trim();
+    const originCep = document.getElementById('originCep').value.replace(/\D/g, '') || '01310100';
+
+    if (!appKey || !appToken) { showError('err2', 'Preencha a Chave e o Token de acesso'); return; }
+    hideError('err2');
+
+    const btn = document.getElementById('btn2');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa fa-circle-notch spin"></i> Conectando...';
+
+    goStep(3);
+    await animateSync();
+
+    try {
+      const resp = await fetch(BASE + '/api/vtex/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account: currentAccount, appKey, appToken, originCep })
+      });
+      const data = await resp.json();
+
+      if (data.success) {
+        // Finaliza itens de sync
+        completeSyncItem('sync3', true);
+        await sleep(400);
+        completeSyncItem('sync4', true);
+        await sleep(600);
+
+        // Step 4 - success
+        document.getElementById('storeName').textContent = currentAccount + '.vtex';
+        document.getElementById('statOrders').textContent = data.orderCount > 0 ? data.orderCount.toLocaleString('pt-BR') : '...';
+
+        document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+        document.getElementById('step4').classList.add('active');
+
+        // Marca todos os dots como done
+        ['dot1','dot2','dot3'].forEach(d => {
+          document.getElementById(d).classList.remove('active');
+          document.getElementById(d).classList.add('done');
+        });
+      } else {
+        goStep(2);
+        showError('err2', data.error || 'Erro ao conectar. Verifique suas credenciais.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa fa-bolt"></i> <span>Autorizar e Conectar</span>';
+      }
+    } catch (e) {
+      goStep(2);
+      showError('err2', 'Erro de conexão. Tente novamente.');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa fa-bolt"></i> <span>Autorizar e Conectar</span>';
+    }
+  }
+
+  function completeSyncItem(id, success) {
+    const el = document.getElementById(id);
+    el.classList.add('done');
+    el.querySelector('.sync-icon').innerHTML = success
+      ? '<i class="fa fa-circle-check" style="color:#22c55e"></i>'
+      : '<i class="fa fa-circle-xmark" style="color:#dc2626"></i>';
+  }
+
+  function activateSyncItem(id) {
+    const el = document.getElementById(id);
+    el.classList.add('active');
+    el.querySelector('.sync-icon').innerHTML = '<i class="fa fa-circle-notch spin" style="color:#3b82f6"></i>';
+  }
+
+  async function animateSync() {
+    completeSyncItem('sync1', true);
+    await sleep(500);
+    activateSyncItem('sync2');
+    completeSyncItem('sync2', true);
+    await sleep(600);
+    activateSyncItem('sync3');
+    await sleep(400);
+    activateSyncItem('sync4');
+    await sleep(300);
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  function toggleToken(btn) {
+    const input = document.getElementById('appToken');
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    btn.querySelector('i').className = isHidden ? 'fa fa-eye-slash' : 'fa fa-eye';
+  }
+
+  // Auto-redireciona se já conectado
+  fetch(BASE + '/api/vtex/status').then(r => r.json()).then(d => {
+    if (d.connected) window.location.href = '/dashboard.html';
+  }).catch(() => {});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AUDITCARGO — Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="config.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/dashboard.html" class="logo">
+    <span class="audit">AUDIT</span><span class="cargo">CARGO</span>
+  </a>
+  <div class="nav-links">
+    <a href="/dashboard.html" class="active"><i class="fa fa-chart-bar"></i> <span>Dashboard</span></a>
+    <a href="/config.html"><i class="fa fa-gear"></i> <span>Configurar</span></a>
+    <div id="vtexNavStatus" style="display:none">
+      <a href="#" id="vtexNavBtn" onclick="vtexSyncNow();return false" style="color:var(--green-light)">
+        <i class="fa fa-store"></i> <span id="vtexNavLabel">VTEX</span>
+      </a>
+    </div>
+  </div>
+</nav>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="spinner"></div>
+  <span style="color:var(--muted);font-size:0.875rem">Carregando dados...</span>
+</div>
+
+<main class="main">
+
+  <!-- VTEX BANNER (aparece só quando conectado) -->
+  <div id="vtexBanner" style="display:none;background:rgba(22,163,74,0.07);border:1px solid rgba(22,163,74,0.2);border-radius:12px;padding:14px 20px;margin-bottom:20px;display:none;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:32px;height:32px;background:rgba(22,163,74,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#22c55e;font-size:1rem"><i class="fa fa-circle-check"></i></div>
+      <div>
+        <div style="font-weight:700;font-size:0.9rem;color:#f8fafc">VTEX conectada</div>
+        <div style="font-size:0.78rem;color:#64748b" id="vtexLastSync">Sincronizando pedidos...</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span id="vtexStoreTag" style="font-size:0.78rem;color:#22c55e;background:rgba(22,163,74,0.12);padding:4px 10px;border-radius:6px;font-weight:600"></span>
+      <button class="btn btn-sm btn-success" onclick="vtexSyncNow()" id="vtexSyncBtn">
+        <i class="fa fa-rotate"></i> Sincronizar agora
+      </button>
+      <button class="btn btn-sm btn-outline" onclick="vtexDisconnect()" title="Desconectar VTEX" style="padding:6px 10px">
+        <i class="fa fa-plug-circle-xmark"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- CTA conectar VTEX (aparece se não conectado) -->
+  <div id="vtexConnectCTA" style="display:none;background:rgba(37,99,235,0.06);border:1px dashed rgba(37,99,235,0.25);border-radius:12px;padding:20px;margin-bottom:20px;text-align:center">
+    <div style="font-size:0.95rem;font-weight:700;margin-bottom:6px">Conecte sua loja VTEX</div>
+    <div style="font-size:0.82rem;color:#64748b;margin-bottom:14px">Importe pedidos reais e audite os fretes automaticamente</div>
+    <a href="connect.html" class="btn btn-primary" style="display:inline-flex">
+      <i class="fa fa-bolt"></i> Instalar em 1 clique
+    </a>
+  </div>
+
+  <div class="page-header">
+    <div>
+      <h1><i class="fa fa-shield-halved" style="color:var(--blue)"></i> Dashboard de Auditoria</h1>
+      <p>Monitoramento em tempo real das cobranças de frete</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline" onclick="recalcular()">
+        <i class="fa fa-rotate"></i> Recalcular
+      </button>
+      <button class="btn btn-gold" onclick="baixarRelatorio()">
+        <i class="fa fa-file-pdf"></i> Relatório de Glosa
+      </button>
+      <button class="btn btn-primary" onclick="seedDados()">
+        <i class="fa fa-database"></i> Dados de Exemplo
+      </button>
+    </div>
+  </div>
+
+  <!-- CARDS RESUMO -->
+  <div class="cards-grid" id="cardsGrid">
+    <div class="card card-accent-gold">
+      <div class="card-icon gold"><i class="fa fa-sack-dollar"></i></div>
+      <div class="card-label">Total Gasto em Frete</div>
+      <div class="card-value" id="totalGasto">R$ 0,00</div>
+      <div class="card-sub" id="totalPedidos">0 pedidos auditados</div>
+    </div>
+    <div class="card card-accent-blue">
+      <div class="card-icon blue"><i class="fa fa-calculator"></i></div>
+      <div class="card-label">Valor Real do Frete</div>
+      <div class="card-value" id="totalReal">R$ 0,00</div>
+      <div class="card-sub">Calculado pelo AUDITCARGO</div>
+    </div>
+    <div class="card card-accent-green">
+      <div class="card-icon green"><i class="fa fa-piggy-bank"></i></div>
+      <div class="card-label">Economia Total</div>
+      <div class="card-value" id="economiaTotal">R$ 0,00</div>
+      <div class="card-sub"><span class="card-highlight" id="porcentagem">0%</span> de economia no frete</div>
+    </div>
+  </div>
+
+  <!-- GRÁFICO -->
+  <div class="chart-section">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title"><i class="fa fa-chart-column" style="color:var(--blue);margin-right:8px"></i>Evolução dos Fretes — Últimos 15 dias</div>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Frete Cobrado</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Frete Correto</div>
+      </div>
+    </div>
+    <canvas id="graficoCanvas" height="240"></canvas>
+  </div>
+
+  <!-- TABELA -->
+  <div class="table-section">
+    <div class="table-header">
+      <div class="table-title"><i class="fa fa-list-check" style="color:var(--blue);margin-right:8px"></i>Últimos Pedidos Auditados</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm btn-outline" onclick="carregarPedidos()">
+          <i class="fa fa-refresh"></i> Atualizar
+        </button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Pedido ID</th>
+            <th>Frete Cobrado</th>
+            <th>Frete Correto</th>
+            <th>Economia</th>
+            <th>Status</th>
+            <th>Data</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody id="pedidosBody">
+          <tr><td colspan="8"><div class="empty-state"><i class="fa fa-inbox"></i><h3>Sem pedidos ainda</h3><p>Envie pedidos via webhook ou clique em "Dados de Exemplo"</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<!-- MODAL COBRAR -->
+<div class="modal-overlay" id="modalCobrar">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa fa-envelope" style="color:var(--blue);margin-right:8px"></i>Solicitar Reembolso</div>
+      <button class="modal-close" onclick="fecharModal()"><i class="fa fa-xmark"></i></button>
+    </div>
+    <div class="modal-field">
+      <label>Para (e-mail da transportadora)</label>
+      <input type="email" id="emailPara" value="transportadora@email.com" placeholder="transportadora@email.com">
+    </div>
+    <div class="modal-field">
+      <label>Assunto</label>
+      <input type="text" id="emailAssunto" readonly>
+    </div>
+    <div class="modal-field">
+      <label>Mensagem</label>
+      <textarea id="emailCorpo" rows="7" style="line-height:1.6"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="abrirEmailCliente()">
+        <i class="fa fa-envelope-open"></i> Abrir no Gmail / Outlook
+      </button>
+      <button class="btn btn-outline" onclick="copiarEmail()">
+        <i class="fa fa-copy"></i> Copiar e-mail
+      </button>
+      <button class="btn btn-outline" onclick="fecharModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="chart-tooltip" id="chartTooltip"></div>
+
+<script src="script.js"></script>
+</body>
+</html>

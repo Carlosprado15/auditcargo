@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AUDITCARGO — Configuração</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="config.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/dashboard.html" class="logo">
+    <span class="audit">AUDIT</span><span class="cargo">CARGO</span>
+  </a>
+  <div class="nav-links">
+    <a href="/dashboard.html"><i class="fa fa-chart-bar"></i> <span>Dashboard</span></a>
+    <a href="/config.html" class="active"><i class="fa fa-gear"></i> <span>Configurar</span></a>
+  </div>
+</nav>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<main class="main">
+
+  <div class="page-header">
+    <div>
+      <h1><i class="fa fa-gear" style="color:var(--blue)"></i> Configurações</h1>
+      <p>Configure o AUDITCARGO para seu e-commerce</p>
+    </div>
+  </div>
+
+  <!-- WEBHOOK -->
+  <div class="config-card">
+    <h2><i class="fa fa-webhook"></i> URL do Webhook</h2>
+    <div class="form-group">
+      <label>Endpoint para receber pedidos</label>
+      <div class="input-group">
+        <input type="text" id="webhookUrl" readonly>
+        <button class="copy-btn" onclick="copiarTexto('webhookUrl', this)">
+          <i class="fa fa-copy"></i> Copiar
+        </button>
+      </div>
+    </div>
+
+    <div class="webhook-tester">
+      <h3><i class="fa fa-flask"></i> Testar Webhook</h3>
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:14px">
+        Envie um pedido de teste para verificar a integração
+      </p>
+      <button class="btn btn-primary btn-sm" onclick="testarWebhook()">
+        <i class="fa fa-paper-plane"></i> Enviar Pedido de Teste
+      </button>
+      <div id="testeResultado" style="margin-top:12px;display:none">
+        <pre id="testeJson" style="background:var(--bg);padding:12px;border-radius:8px;font-size:0.78rem;color:var(--green-light);overflow-x:auto;border:1px solid var(--card-border)"></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- DADOS DO CLIENTE -->
+  <div class="config-card">
+    <h2><i class="fa fa-building"></i> Dados do Cliente</h2>
+    <div class="form-group">
+      <label>Nome do responsável</label>
+      <input type="text" id="clienteNome" placeholder="Ex: João Silva">
+    </div>
+    <div class="form-group">
+      <label>E-mail para relatórios</label>
+      <input type="email" id="clienteEmail" placeholder="Ex: joao@empresa.com.br">
+    </div>
+    <div class="form-group">
+      <label>Nome da empresa</label>
+      <input type="text" id="empresaNome" placeholder="Ex: Loja Virtual LTDA">
+    </div>
+    <button class="btn btn-primary" onclick="salvarConfig()">
+      <i class="fa fa-save"></i> Salvar Configurações
+    </button>
+  </div>
+
+  <!-- INSTRUÇÕES -->
+  <div class="config-card">
+    <h2><i class="fa fa-circle-info"></i> Como Integrar</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h4><i class="fa fa-clipboard" style="color:var(--gold)"></i> Copie a URL do Webhook</h4>
+          <p>Clique no botão "Copiar" ao lado da URL do endpoint acima</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h4><i class="fa fa-link" style="color:var(--blue)"></i> Cole na sua plataforma</h4>
+          <p>Configure o webhook nas plataformas: <strong>VTEX, Bling, Tiny ERP, Magento, WooCommerce, Shopify</strong></p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h4><i class="fa fa-circle-check" style="color:var(--green)"></i> Pronto!</h4>
+          <p>O AUDITCARGO auditará automaticamente cada pedido e identificará cobranças indevidas</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORMATO DO PAYLOAD -->
+  <div class="config-card">
+    <h2><i class="fa fa-code"></i> Formato do Payload (JSON)</h2>
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:14px">
+      Envie os dados do pedido neste formato via POST para o webhook:
+    </p>
+    <pre style="background:var(--bg);padding:16px;border-radius:8px;font-size:0.8rem;color:#7dd3fc;overflow-x:auto;border:1px solid var(--card-border);line-height:1.7">{
+  <span style="color:#f472b6">"pedidoId"</span>: <span style="color:#86efac">"PED-001"</span>,
+  <span style="color:#f472b6">"cepOrigem"</span>: <span style="color:#86efac">"01310100"</span>,
+  <span style="color:#f472b6">"cepDestino"</span>: <span style="color:#86efac">"20040020"</span>,
+  <span style="color:#f472b6">"peso"</span>: <span style="color:#fbbf24">2.5</span>,
+  <span style="color:#f472b6">"comprimento"</span>: <span style="color:#fbbf24">30</span>,
+  <span style="color:#f472b6">"altura"</span>: <span style="color:#fbbf24">20</span>,
+  <span style="color:#f472b6">"largura"</span>: <span style="color:#fbbf24">20</span>,
+  <span style="color:#f472b6">"freteCobrado"</span>: <span style="color:#fbbf24">45.90</span>
+}</pre>
+
+    <div class="divider"></div>
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:10px">Resposta esperada:</p>
+    <pre style="background:var(--bg);padding:16px;border-radius:8px;font-size:0.8rem;color:#7dd3fc;overflow-x:auto;border:1px solid var(--card-border);line-height:1.7">{
+  <span style="color:#f472b6">"success"</span>: <span style="color:#fbbf24">true</span>,
+  <span style="color:#f472b6">"economia"</span>: <span style="color:#86efac">"12.45"</span>,
+  <span style="color:#f472b6">"freteCorreto"</span>: <span style="color:#86efac">"33.45"</span>,
+  <span style="color:#f472b6">"status"</span>: <span style="color:#86efac">"cobrado_a_mais"</span>,
+  <span style="color:#f472b6">"message"</span>: <span style="color:#86efac">"Auditoria realizada com sucesso"</span>
+}</pre>
+  </div>
+
+</main>
+
+<script>
+  const BASE = window.API_BASE || '';
+
+  function toast(msg, tipo = 'info') {
+    const container = document.getElementById('toastContainer');
+    const el = document.createElement('div');
+    el.className = `toast ${tipo}`;
+    const icons = { success: 'fa-circle-check', error: 'fa-circle-xmark', info: 'fa-circle-info' };
+    el.innerHTML = `<i class="fa ${icons[tipo] || 'fa-circle-info'}" style="color:${tipo==='success'?'var(--green-light)':tipo==='error'?'#f87171':'var(--blue-light)'}"></i> ${msg}`;
+    container.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+
+  function copiarTexto(id, btn) {
+    const val = document.getElementById(id).value;
+    navigator.clipboard.writeText(val).then(() => {
+      btn.innerHTML = '<i class="fa fa-check"></i> Copiado!';
+      btn.classList.add('copied');
+      toast('URL copiada!', 'success');
+      setTimeout(() => {
+        btn.innerHTML = '<i class="fa fa-copy"></i> Copiar';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  async function carregarConfig() {
+    document.getElementById('webhookUrl').value = (BASE || window.location.origin) + '/webhook';
+    try {
+      const r = await fetch(BASE + '/api/config');
+      const cfg = await r.json();
+      document.getElementById('clienteNome').value = cfg.cliente_nome || '';
+      document.getElementById('clienteEmail').value = cfg.cliente_email || '';
+      document.getElementById('empresaNome').value = cfg.empresa_nome || '';
+    } catch {}
+  }
+
+  async function salvarConfig() {
+    try {
+      const body = {
+        cliente_nome: document.getElementById('clienteNome').value,
+        cliente_email: document.getElementById('clienteEmail').value,
+        empresa_nome: document.getElementById('empresaNome').value
+      };
+      const r = await fetch(BASE + '/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const data = await r.json();
+      if (data.success) toast('Configurações salvas com sucesso!', 'success');
+      else toast('Erro ao salvar configurações', 'error');
+    } catch {
+      toast('Erro de conexão', 'error');
+    }
+  }
+
+  async function testarWebhook() {
+    const payload = {
+      pedidoId: 'TESTE-' + Date.now(),
+      cepOrigem: '01310100',
+      cepDestino: '20040020',
+      peso: 2.5,
+      comprimento: 30,
+      altura: 20,
+      largura: 20,
+      freteCobrado: 45.90
+    };
+    try {
+      const r = await fetch(BASE + '/webhook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await r.json();
+      document.getElementById('testeResultado').style.display = 'block';
+      document.getElementById('testeJson').textContent = JSON.stringify(data, null, 2);
+      toast('Webhook testado com sucesso!', 'success');
+    } catch (e) {
+      toast('Erro ao testar webhook: ' + e.message, 'error');
+    }
+  }
+
+  carregarConfig();
+</script>
+</body>
+</html>
