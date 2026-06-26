@@ -33,6 +33,7 @@ const MODULOS = [
   { nome: 'ImportadorTabela',     arquivo: './testes/t06_importador',      precisaDb: true  },
   { nome: 'RelatorioGenerator',   arquivo: './testes/t07_relatorio',       precisaDb: false },
   { nome: 'DocumentParser (OCR)', arquivo: './testes/t08_ocr',             precisaDb: false },
+  { nome: 'Verificacao',          arquivo: './testes/t09_verificacao',     precisaDb: true  },
 ];
 
 async function limparDadosTeste() {
@@ -53,6 +54,9 @@ async function limparDadosTeste() {
 
     // Remove config de teste (se algum módulo criar)
     await db.run(`DELETE FROM config WHERE chave LIKE '${PREFIX}%'`);
+
+    // Remove relatorios de teste (t09)
+    await db.run(`DELETE FROM relatorios WHERE audit_uuid LIKE '${PREFIX}%'`);
   } catch (err) {
     console.warn('[Cleanup] Aviso durante limpeza:', err.message);
   }

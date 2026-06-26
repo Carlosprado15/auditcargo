@@ -106,6 +106,18 @@ async function initDB() {
       usuario TEXT,
       importado_em DATETIME DEFAULT (datetime('now'))
     )`,
+    `CREATE TABLE IF NOT EXISTS relatorios (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      audit_uuid TEXT UNIQUE NOT NULL,
+      audit_hash TEXT,
+      data_emissao_relatorio TEXT NOT NULL,
+      total_pedidos INTEGER DEFAULT 0,
+      total_documentos INTEGER DEFAULT 0,
+      total_paginas INTEGER DEFAULT 0,
+      versao_motor TEXT,
+      fontes_utilizadas TEXT,
+      criado_em DATETIME DEFAULT (datetime('now'))
+    )`,
     `INSERT OR IGNORE INTO config (chave, valor) VALUES ('cliente_nome','Seu Cliente')`,
     `INSERT OR IGNORE INTO config (chave, valor) VALUES ('cliente_email','cliente@email.com')`,
     `INSERT OR IGNORE INTO config (chave, valor) VALUES ('empresa_nome','Minha Empresa')`,
@@ -123,6 +135,7 @@ async function initDB() {
     `ALTER TABLE pedidos ADD COLUMN observacao_auditoria TEXT`,
     `ALTER TABLE tabelas_frete ADD COLUMN arquivo_origem TEXT`,
     `ALTER TABLE tabelas_frete ADD COLUMN usuario TEXT`,
+    `ALTER TABLE relatorios ADD COLUMN total_paginas INTEGER DEFAULT 0`,
   ];
   for (const migration of migrations) {
     try { await _client.execute(migration); } catch {}

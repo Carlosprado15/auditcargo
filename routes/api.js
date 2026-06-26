@@ -1,9 +1,131 @@
+const crypto = require('crypto');
 const express = require('express');
 const router = express.Router();
 const db = require('../services/database');
 const { calcularFrete, determinarStatus } = require('../services/freteCalculator');
 const { calcularComReferencia } = require('../services/referenceEngine');
 const { gerarRelatorioPDF } = require('../services/relatorioGenerator');
+
+function gerarHtmlVerificacao(relatorio, auditUuid) {
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  const estilos = [
+    '*{box-sizing:border-box;margin:0;padding:0}',
+    'body{font-family:Arial,sans-serif;background:#0f172a;color:#f8fafc;min-height:100vh}',
+    'header{background:#0f172a;border-bottom:1px solid rgba(255,255,255,0.08);padding:20px 32px}',
+    '.brand{font-size:22px;font-weight:800;letter-spacing:-0.5px}',
+    '.brand .audit{color:#2563eb}.brand .cargo{color:#f59e0b}',
+    '.subtitle{color:#94a3b8;font-size:13px;margin-top:5px}',
+    'main{max-width:660px;margin:36px auto;padding:0 16px}',
+    '.card{background:#1e293b;border:1px solid rgba(255,255,255,0.08);border-radius:10px;overflow:hidden;margin-bottom:20px}',
+    '.card-header{background:#0f172a;padding:12px 18px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#94a3b8}',
+    '.field{display:flex;border-bottom:1px solid rgba(255,255,255,0.06)}',
+    '.field:last-child{border-bottom:none}',
+    '.field:nth-child(even){background:rgba(255,255,255,0.02)}',
+    '.field-label{width:210px;padding:11px 16px;color:#64748b;font-size:12px;flex-shrink:0}',
+    '.field-value{padding:11px 16px;color:#f8fafc;font-size:12px;font-weight:600;word-break:break-all;flex:1}',
+    '.ok{color:#22c55e}.err{color:#f87171}',
+    '.not-found{text-align:center;padding:64px 20px}',
+    '.not-found h2{font-size:18px;font-weight:700;margin-bottom:10px;color:#f8fafc}',
+    '.not-found p{color:#94a3b8;font-size:13px;line-height:1.7;margin-top:8px}',
+    'footer{text-align:center;padding:24px;color:#475569;font-size:11px;border-top:1px solid rgba(255,255,255,0.06);margin-top:32px}'
+  ].join('');
+
+  const htmlShell = (conteudo) =>
+    `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">` +
+    `<meta name="viewport" content="width=device-width,initial-scale=1">` +
+    `<title>AUDITCARGO — Verificação de Autenticidade</title>` +
+    `<style>${estilos}</style></head><body>` +
+    `<header><div class="brand"><span class="audit">AUDIT</span><span class="cargo">CARGO</span></div>` +
+    `<div class="subtitle">Verificação de Autenticidade de Documento</div></header>` +
+    `<main>${conteudo}</main>` +
+    `<footer>AUDITCARGO — Sistema de Auditoria Automática de Fretes</footer>` +
+    `</body></html>`;
+
+  if (!relatorio) {
+    return htmlShell(
+      `<div class="card"><div class="not-found">` +
+      `<h2>Documento não localizado.</h2>` +
+      `<p>O identificador informado não corresponde a nenhum documento registrado no sistema.</p>` +
+      `<p>Documentos emitidos antes da implementação do sistema de autenticação não podem ser verificados por este canal.</p>` +
+      `</div></div>`
+    );
+  }
+
+  const integro = !!(relatorio.audit_hash && relatorio.data_emissao_relatorio && relatorio.versao_motor);
+  const statusIntegridade = integro
+    ? `<span class="ok">&#x1F7E2; Documento íntegro</span>`
+    : `<span class="err">&#x1F534; Documento inconsistente</span>`;
+
+  let dataEmissao = '—';
+  try { dataEmissao = esc(new Date(relatorio.data_emissao_relatorio).toLocaleString('pt-BR')); } catch {}
+
+  let fontesStr = '—';
+  try {
+    const fontes = JSON.parse(relatorio.fontes_utilizadas || '{}');
+    const labels = { tabela_cliente: 'Tabela Contratual', melhor_envio: 'API Melhor Envio', fallback: 'Estimativa Interna' };
+    const entries = Object.entries(fontes);
+    if (entries.length > 0) {
+      fontesStr = esc(entries.map(([k, v]) => `${labels[k] || k}: ${v} pedido(s)`).join(' | '));
+    }
+  } catch {}
+
+  const totalPaginas = relatorio.total_paginas && relatorio.total_paginas > 0
+    ? esc(String(relatorio.total_paginas)) : '—';
+
+  const blocoStatus =
+    `<div class="card"><div class="card-header">Status do Documento</div>` +
+    `<div class="field"><span class="field-label">Situação da Integridade</span><span class="field-value">${statusIntegridade}</span></div>` +
+    `<div class="field"><span class="field-label">Documento</span><span class="field-value ok">&#x2713; Documento encontrado</span></div>` +
+    `</div>`;
+
+  const blocoInfo =
+    `<div class="card"><div class="card-header">Informações do Documento</div>` +
+    `<div class="field"><span class="field-label">ID da Auditoria</span><span class="field-value">${esc(relatorio.audit_uuid)}</span></div>` +
+    `<div class="field"><span class="field-label">Data de Emissão</span><span class="field-value">${dataEmissao}</span></div>` +
+    `<div class="field"><span class="field-label">Versão AUDITCARGO</span><span class="field-value">v1.0.1</span></div>` +
+    `<div class="field"><span class="field-label">Versão do Motor</span><span class="field-value">v${esc(relatorio.versao_motor || '—')}</span></div>` +
+    `<div class="field"><span class="field-label">Pedidos Auditados</span><span class="field-value">${esc(relatorio.total_pedidos != null ? String(relatorio.total_pedidos) : '—')}</span></div>` +
+    `<div class="field"><span class="field-label">Páginas do Documento</span><span class="field-value">${totalPaginas}</span></div>` +
+    `<div class="field"><span class="field-label">Fontes Utilizadas</span><span class="field-value">${fontesStr}</span></div>` +
+    `</div>`;
+
+  const blocoHash =
+    `<div class="card"><div class="card-header">Integridade Criptográfica</div>` +
+    `<div class="field"><span class="field-label">Hash SHA-256</span><span class="field-value" style="font-family:monospace;font-size:10px">${esc(relatorio.audit_hash || '—')}</span></div>` +
+    `</div>`;
+
+  return htmlShell(blocoStatus + blocoInfo + blocoHash);
+}
+
+function gerarAuditUuid() {
+  const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const randomPart = crypto.randomBytes(4).toString('hex').toUpperCase();
+  return `AUD-${datePart}-${randomPart}`;
+}
+
+function gerarAuditHash(dados) {
+  const payload = JSON.stringify({
+    dataEmissao: dados.dataEmissao,
+    totalGasto: dados.totalGasto,
+    totalReal: dados.totalReal,
+    economia: dados.economia,
+    totalPedidos: dados.totalPedidos,
+    pedidos: dados.pedidos.map(p => ({
+      pedidoId: p.pedidoId,
+      freteCobrado: p.freteCobrado,
+      freteCorreto: p.freteCorreto,
+      economia: p.economia,
+      status: p.status,
+      fonte_referencia: p.fonte_referencia,
+      dataHora: p.dataHora
+    }))
+  });
+  return crypto.createHash('sha256').update(payload, 'utf8').digest('hex');
+}
 
 // POST /webhook
 router.post('/webhook', async (req, res) => {
@@ -152,7 +274,6 @@ async function buildDadosRelatorio() {
   const totalGasto = resumo.totalGasto || 0;
   const economia = resumo.economia || 0;
 
-  // Agrega estatísticas do motor para o relatório
   const fonteContagem = {};
   let versaoMotor = '1.0';
   pedidos.forEach(p => {
@@ -161,7 +282,10 @@ async function buildDadosRelatorio() {
     if (p.versao_motor) versaoMotor = p.versao_motor;
   });
 
-  return {
+  const auditUuid = gerarAuditUuid();
+  const dataEmissao = new Date().toISOString();
+
+  const resultado = {
     totalGasto,
     totalReal: resumo.totalReal || 0,
     economia,
@@ -171,8 +295,13 @@ async function buildDadosRelatorio() {
     clienteNome: config.cliente_nome || 'Cliente',
     clienteEmail: config.cliente_email || '',
     empresaNome: config.empresa_nome || 'Empresa',
-    motorInfo: { versao: versaoMotor, fonteContagem }
+    motorInfo: { versao: versaoMotor, fonteContagem },
+    auditUuid,
+    dataEmissao
   };
+
+  resultado.auditHash = gerarAuditHash(resultado);
+  return resultado;
 }
 
 // GET /api/relatorio
@@ -187,9 +316,56 @@ router.get('/relatorio', async (req, res) => {
 // GET /api/relatorio/pdf
 router.get('/relatorio/pdf', async (req, res) => {
   try {
-    gerarRelatorioPDF(await buildDadosRelatorio(), res);
+    const dados = await buildDadosRelatorio();
+    await db.run(
+      `INSERT OR IGNORE INTO relatorios
+        (audit_uuid, audit_hash, data_emissao_relatorio, total_pedidos, total_documentos, versao_motor, fontes_utilizadas, total_paginas)
+       VALUES (?,?,?,?,?,?,?,?)`,
+      [
+        dados.auditUuid,
+        dados.auditHash,
+        dados.dataEmissao,
+        dados.totalPedidos,
+        dados.pedidos.length,
+        dados.motorInfo.versao,
+        JSON.stringify(dados.motorInfo.fonteContagem),
+        0
+      ]
+    );
+    const totalPaginas = await gerarRelatorioPDF(dados, res);
+    try {
+      if (totalPaginas > 0) {
+        await db.run(
+          'UPDATE relatorios SET total_paginas = ? WHERE audit_uuid = ?',
+          [totalPaginas, dados.auditUuid]
+        );
+      }
+    } catch (dbErr) {
+      console.error('Aviso: falha ao atualizar total_paginas:', dbErr.message);
+    }
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    if (!res.headersSent) res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /verify/:audit_uuid
+router.get('/verify/:audit_uuid', async (req, res) => {
+  try {
+    const { audit_uuid } = req.params;
+    if (!audit_uuid || !/^[A-Za-z0-9_\-]+$/.test(audit_uuid)) {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      return res.status(404).send(gerarHtmlVerificacao(null, audit_uuid));
+    }
+    const relatorio = await db.get(
+      'SELECT * FROM relatorios WHERE audit_uuid = ?',
+      [audit_uuid]
+    );
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(gerarHtmlVerificacao(relatorio || null, audit_uuid));
+  } catch (err) {
+    console.error('Verify route error:', err.message);
+    res.status(500).setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(gerarHtmlVerificacao(null, req.params.audit_uuid));
   }
 });
 
