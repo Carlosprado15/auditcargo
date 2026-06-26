@@ -25,7 +25,6 @@ router.post('/connect', async (req, res) => {
 
   const cep = (originCep || '01310100').replace(/\D/g, '');
 
-  // Salva credenciais
   const pairs = [
     ['vtex_account', account],
     ['vtex_appkey', appKey],
@@ -36,13 +35,15 @@ router.post('/connect', async (req, res) => {
     ['vtex_last_sync', new Date().toISOString()],
     ['vtex_order_count', String(validation.orderCount)],
   ];
-  pairs.forEach(([k, v]) => db.run('INSERT OR REPLACE INTO config (chave, valor) VALUES (?,?)', [k, v]));
+  for (const [k, v] of pairs) {
+    await db.run('INSERT OR REPLACE INTO config (chave, valor) VALUES (?,?)', [k, v]);
+  }
 
   // Sync em background — não bloqueia o response
   vtex.syncOrders(account, appKey, appToken, cep, 100)
-    .then(({ synced }) => {
-      db.run('INSERT OR REPLACE INTO config (chave, valor) VALUES (?,?)', ['vtex_synced_count', String(synced)]);
-      db.run('INSERT OR REPLACE INTO config (chave, valor) VALUES (?,?)', ['vtex_last_sync', new Date().toISOString()]);
+    .then(async ({ synced }) => {
+      await db.run('INSERT OR REPLACE INTO config (chave, valor) VALUES (?,?)', ['vtex_synced_count', String(synced)]);
+      await db.run('INSERT OR REPLACE INTO config (chave, valor) VALUES (?,?)', ['vtex_last_sync', new Date().toISOString()]);
     })
     .catch(() => {});
 
@@ -54,8 +55,8 @@ router.post('/connect', async (req, res) => {
 });
 
 // GET /api/vtex/status
-router.get('/status', (req, res) => {
-  const rows = db.all("SELECT chave, valor FROM config WHERE chave LIKE 'vtex_%'");
+router.get('/status', async (req, res) => {
+  const rows = await db.all("SELECT chave, valor FROM config WHERE chave LIKE 'vtex_%'");
   const cfg = {};
   rows.forEach(r => { cfg[r.chave] = r.valor; });
 
@@ -70,7 +71,7 @@ router.get('/status', (req, res) => {
 
 // POST /api/vtex/sync — sync manual
 router.post('/sync', async (req, res) => {
-  const rows = db.all("SELECT chave, valor FROM config WHERE chave LIKE 'vtex_%'");
+  const rows = await db.all("SELECT chave, valor FROM config WHERE chave LIKE 'vtex_%'");
   const cfg = {};
   rows.forEach(r => { cfg[r.chave] = r.valor; });
 
@@ -80,8 +81,8 @@ router.post('/sync', async (req, res) => {
 
   try {
     const { synced } = await vtex.syncOrders(cfg.vtex_account, cfg.vtex_appkey, cfg.vtex_apptoken, cfg.vtex_origin_cep, 100);
-    db.run('INSERT OR REPLACE INTO config (chave, valor) VALUES (?,?)', ['vtex_synced_count', String(synced)]);
-    db.run('INSERT OR REPLACE INTO config (chave, valor) VALUES (?,?)', ['vtex_last_sync', new Date().toISOString()]);
+    await db.run('INSERT OR REPLACE INTO config (chave, valor) VALUES (?,?)', ['vtex_synced_count', String(synced)]);
+    await db.run('INSERT OR REPLACE INTO config (chave, valor) VALUES (?,?)', ['vtex_last_sync', new Date().toISOString()]);
     res.json({ success: true, synced });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -89,9 +90,11 @@ router.post('/sync', async (req, res) => {
 });
 
 // DELETE /api/vtex/disconnect
-router.delete('/disconnect', (req, res) => {
-  ['vtex_account', 'vtex_appkey', 'vtex_apptoken', 'vtex_connected', 'vtex_last_sync', 'vtex_synced_count', 'vtex_origin_cep', 'vtex_order_count']
-    .forEach(k => db.run('DELETE FROM config WHERE chave = ?', [k]));
+router.delete('/disconnect', async (req, res) => {
+  const keys = ['vtex_account', 'vtex_appkey', 'vtex_apptoken', 'vtex_connected', 'vtex_last_sync', 'vtex_synced_count', 'vtex_origin_cep', 'vtex_order_count'];
+  for (const k of keys) {
+    await db.run('DELETE FROM config WHERE chave = ?', [k]);
+  }
   res.json({ success: true });
 });
 

@@ -5,7 +5,7 @@ const { calcularFrete, determinarStatus } = require('../services/freteCalculator
 const { gerarRelatorioPDF } = require('../services/relatorioGenerator');
 
 // POST /webhook
-router.post('/webhook', (req, res) => {
+router.post('/webhook', async (req, res) => {
   try {
     const { pedidoId, cepOrigem, cepDestino, peso, comprimento, altura, largura, freteCobrado } = req.body;
 
@@ -24,7 +24,7 @@ router.post('/webhook', (req, res) => {
     const economia = Math.max(0, Number(freteCobrado) - freteCorreto);
     const status = determinarStatus(Number(freteCobrado), freteCorreto);
 
-    db.run(
+    await db.run(
       `INSERT OR REPLACE INTO pedidos
         (pedidoId, cepOrigem, cepDestino, peso, comprimento, altura, largura, freteCobrado, freteCorreto, economia, status)
        VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
@@ -47,9 +47,9 @@ router.post('/webhook', (req, res) => {
 });
 
 // GET /api/resumo
-router.get('/resumo', (req, res) => {
+router.get('/resumo', async (req, res) => {
   try {
-    const row = db.get(`
+    const row = await db.get(`
       SELECT
         SUM(freteCobrado) AS totalGasto,
         SUM(freteCorreto) AS totalReal,
@@ -70,9 +70,9 @@ router.get('/resumo', (req, res) => {
 });
 
 // GET /api/grafico
-router.get('/grafico', (req, res) => {
+router.get('/grafico', async (req, res) => {
   try {
-    const rows = db.all(`
+    const rows = await db.all(`
       SELECT
         DATE(dataHora) AS data,
         SUM(freteCobrado) AS freteCobrado,
@@ -103,9 +103,9 @@ router.get('/grafico', (req, res) => {
 });
 
 // GET /api/pedidos
-router.get('/pedidos', (req, res) => {
+router.get('/pedidos', async (req, res) => {
   try {
-    const rows = db.all(`
+    const rows = await db.all(`
       SELECT id, pedidoId, freteCobrado, freteCorreto, economia, status, dataHora, enviado
       FROM pedidos
       ORDER BY dataHora DESC
@@ -118,9 +118,9 @@ router.get('/pedidos', (req, res) => {
 });
 
 // GET /api/pedidos/:id
-router.get('/pedidos/:id', (req, res) => {
+router.get('/pedidos/:id', async (req, res) => {
   try {
-    const row = db.get('SELECT * FROM pedidos WHERE id = ?', [req.params.id]);
+    const row = await db.get('SELECT * FROM pedidos WHERE id = ?', [req.params.id]);
     if (!row) return res.status(404).json({ error: 'Pedido não encontrado' });
     res.json(row);
   } catch (err) {
@@ -129,19 +129,19 @@ router.get('/pedidos/:id', (req, res) => {
 });
 
 // PATCH /api/pedidos/:id/enviado
-router.patch('/pedidos/:id/enviado', (req, res) => {
+router.patch('/pedidos/:id/enviado', async (req, res) => {
   try {
-    db.run('UPDATE pedidos SET enviado = 1 WHERE id = ?', [req.params.id]);
+    await db.run('UPDATE pedidos SET enviado = 1 WHERE id = ?', [req.params.id]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-function buildDadosRelatorio() {
-  const resumo = db.get(`SELECT SUM(freteCobrado) AS totalGasto, SUM(freteCorreto) AS totalReal, SUM(economia) AS economia, COUNT(*) AS totalPedidos FROM pedidos`);
-  const pedidos = db.all(`SELECT pedidoId, freteCobrado, freteCorreto, economia, status, dataHora FROM pedidos ORDER BY dataHora DESC`);
-  const cfgRows = db.all('SELECT chave, valor FROM config');
+async function buildDadosRelatorio() {
+  const resumo = await db.get(`SELECT SUM(freteCobrado) AS totalGasto, SUM(freteCorreto) AS totalReal, SUM(economia) AS economia, COUNT(*) AS totalPedidos FROM pedidos`);
+  const pedidos = await db.all(`SELECT pedidoId, freteCobrado, freteCorreto, economia, status, dataHora FROM pedidos ORDER BY dataHora DESC`);
+  const cfgRows = await db.all('SELECT chave, valor FROM config');
   const config = {};
   cfgRows.forEach(c => { config[c.chave] = c.valor; });
 
@@ -162,27 +162,27 @@ function buildDadosRelatorio() {
 }
 
 // GET /api/relatorio
-router.get('/relatorio', (req, res) => {
+router.get('/relatorio', async (req, res) => {
   try {
-    res.json(buildDadosRelatorio());
+    res.json(await buildDadosRelatorio());
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 // GET /api/relatorio/pdf
-router.get('/relatorio/pdf', (req, res) => {
+router.get('/relatorio/pdf', async (req, res) => {
   try {
-    gerarRelatorioPDF(buildDadosRelatorio(), res);
+    gerarRelatorioPDF(await buildDadosRelatorio(), res);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 // GET /api/config
-router.get('/config', (req, res) => {
+router.get('/config', async (req, res) => {
   try {
-    const rows = db.all('SELECT chave, valor FROM config');
+    const rows = await db.all('SELECT chave, valor FROM config');
     const config = {};
     rows.forEach(r => { config[r.chave] = r.valor; });
     res.json(config);
@@ -192,12 +192,12 @@ router.get('/config', (req, res) => {
 });
 
 // POST /api/config
-router.post('/config', (req, res) => {
+router.post('/config', async (req, res) => {
   try {
     const { cliente_nome, cliente_email, empresa_nome } = req.body;
-    if (cliente_nome !== undefined) db.run('INSERT OR REPLACE INTO config (chave, valor) VALUES (?,?)', ['cliente_nome', cliente_nome]);
-    if (cliente_email !== undefined) db.run('INSERT OR REPLACE INTO config (chave, valor) VALUES (?,?)', ['cliente_email', cliente_email]);
-    if (empresa_nome !== undefined) db.run('INSERT OR REPLACE INTO config (chave, valor) VALUES (?,?)', ['empresa_nome', empresa_nome]);
+    if (cliente_nome !== undefined) await db.run('INSERT OR REPLACE INTO config (chave, valor) VALUES (?,?)', ['cliente_nome', cliente_nome]);
+    if (cliente_email !== undefined) await db.run('INSERT OR REPLACE INTO config (chave, valor) VALUES (?,?)', ['cliente_email', cliente_email]);
+    if (empresa_nome !== undefined) await db.run('INSERT OR REPLACE INTO config (chave, valor) VALUES (?,?)', ['empresa_nome', empresa_nome]);
     res.json({ success: true, message: 'Configurações salvas' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -205,7 +205,7 @@ router.post('/config', (req, res) => {
 });
 
 // POST /api/seed
-router.post('/seed', (req, res) => {
+router.post('/seed', async (req, res) => {
   try {
     const exemplos = [
       { pedidoId: 'PED-001', cepOrigem: '01310100', cepDestino: '20040020', peso: 2.5, comprimento: 30, altura: 20, largura: 20, freteCobrado: 45.90 },
@@ -221,7 +221,7 @@ router.post('/seed', (req, res) => {
     ];
 
     let inseridos = 0;
-    exemplos.forEach((ex, i) => {
+    for (const ex of exemplos) {
       const freteCorreto = calcularFrete(ex);
       const economia = Math.max(0, ex.freteCobrado - freteCorreto);
       const status = determinarStatus(ex.freteCobrado, freteCorreto);
@@ -230,7 +230,7 @@ router.post('/seed', (req, res) => {
       const dataHora = new Date(Date.now() - diasAtras * 86400000 - horasAtras * 3600000).toISOString().replace('T', ' ').split('.')[0];
 
       try {
-        db.run(
+        await db.run(
           `INSERT OR IGNORE INTO pedidos
             (pedidoId, cepOrigem, cepDestino, peso, comprimento, altura, largura, freteCobrado, freteCorreto, economia, status, dataHora)
            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
@@ -239,7 +239,7 @@ router.post('/seed', (req, res) => {
         );
         inseridos++;
       } catch {}
-    });
+    }
 
     res.json({ success: true, message: `${inseridos} pedidos de exemplo inseridos` });
   } catch (err) {

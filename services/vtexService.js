@@ -123,7 +123,7 @@ async function processOrder(account, appKey, appToken, orderId, originCep) {
   const economia = Math.max(0, freteCobrado - freteCorreto);
   const status = determinarStatus(freteCobrado, freteCorreto);
 
-  db.run(
+  await db.run(
     `INSERT OR REPLACE INTO pedidos
       (pedidoId, cepOrigem, cepDestino, peso, comprimento, altura, largura, freteCobrado, freteCorreto, economia, status)
      VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
