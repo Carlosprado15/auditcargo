@@ -2,9 +2,9 @@ window.COMPANY = {
   name: 'AUDITCARGO',
   product: 'Plataforma Inteligente de Auditoria de Fretes',
   site: 'https://www.auditcargo.com.br',
-  email: 'contato@auditcargo.com.br',
-  emailComercial: 'comercial@auditcargo.com.br',
-  emailSuporte: 'suporte@auditcargo.com.br',
+  email: 'auditcargo.contato@gmail.com',
+  emailComercial: 'auditcargo.contato@gmail.com',
+  emailSuporte: 'auditcargo.contato@gmail.com',
   privacyPolicy: 'https://www.auditcargo.com.br/privacidade',
   terms: 'https://www.auditcargo.com.br/termos',
   year: 2026
